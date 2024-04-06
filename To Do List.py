@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 from colorama import init, Fore, Back, Style
 
 init(autoreset=True)
@@ -37,10 +38,13 @@ class TaskManager:
             print("To-Do List:")
             for index, task in enumerate(self.tasks, start=1):
                 status = "Done" if task["completed"] else "Not Done"
-                print(f"{index}. {task['description']} - {status}")
+                due_date = task.get("due_date", "No due date")
+                print(f"{index}. {task['description']} - {status} - Due: {due_date}")
 
-    def add_task(self, description):
-        self.tasks.append({"description": description, "completed": False})
+    def add_task(self):
+        description = input("Enter task description")
+        due_date = input("Enter due date (MM-DD-YYYY: )")
+        self.tasks.append({"description": description, "completed": False, "due_date": due_date})
         print(Fore.GREEN + "Task added.")
         self.save_tasks()
 
@@ -60,13 +64,29 @@ class TaskManager:
             print(Fore.RED + "Invalid task number.")
         self.save_tasks()
 
-    def edit_task(self, task_number, new_description):
+    def edit_task(self, task_number, new_description=None, new_due_date=None):
         if 0 < task_number <= len(self.tasks):
-            self.tasks[task_number - 1]['description'] = new_description
+            if new_description:
+                self.tasks[task_number - 1]['description'] = new_description
+            if new_due_date: 
+                self.tasks[task_number - 1]['due_date'] = new_due_date
             print(Fore.GREEN + "Task updated successfully.")
             self.save_tasks() 
         else:
             print(Fore.RED + "Invalid task number.")
+    
+    def check_reminders(self):
+        current_date = datetime.date.today()
+        for task in self.tasks:
+            try:
+                task_due_date = datetime.datetime.strptime(task["due_date"], '%m-%d-%Y').date()
+                if (task_due_date - current_date).days <= 1: 
+                    print(Fore.YELLOW + f'Reminder: The task "{task["description"]}" is due soon on {task["due_date"]}.')
+            except ValueError:
+                print(Fore.RED + f'Error: Incorrect date format for task "{task["description"]}". Please use MM-DD-YYYY.')
+
+                continue
+        
 
 def show_menu():
     clear_screen()
@@ -80,13 +100,13 @@ def show_menu():
 def main():
     task_manager = TaskManager()
     while True:
-        show_menu()  
+        show_menu()
+        task_manager.check_reminders()  
         choice = input("Choose an option: ")
         if choice == "1":
             task_manager.show_tasks()
         elif choice == "2": 
-            description = input("Enter task description: ")
-            task_manager.add_task(description)
+            task_manager.add_task()
         elif choice == "3":
             task_number = int(input("Enter task number to delete: "))
             task_manager.delete_task(task_number)
@@ -95,8 +115,9 @@ def main():
             task_manager.complete_task(task_number)
         elif choice == "5":
             task_number = int(input("Enter task number to edit: "))
-            new_description = input("Enter new task description: ")
-            task_manager.edit_task(task_number, new_description)
+            new_description = input("Enter new task description (leave blank to keep current): ")
+            new_due_date= input("Enter a new due date (MM-DD-YYYY) (leave blank to keep current): ")
+            task_manager.edit_task(task_number, new_description if new_description else None, new_due_date if new_due_date else None)
         elif choice == "6":
             print("Goodbye!")
             break
