@@ -32,19 +32,23 @@ class TaskManager:
             print(Fore.RED + f"An unexpected error occurred: {e}")
 
     def show_tasks(self):
+        priority_mapping = {"High": 1, "Medium": 2, "Low": 3}
         if not self.tasks:  
             print(Fore.YELLOW + "No tasks to show.")
         else:
             print("To-Do List:")
+            sorted_tasks = sorted(self.tasks, key=lambda x: priority_mapping.get(x.get("priority", "Low"), 3))
             for index, task in enumerate(self.tasks, start=1):
                 status = "Done" if task["completed"] else "Not Done"
                 due_date = task.get("due_date", "No due date")
+                priority = task.get("priority", "No priority")
                 print(f"{index}. {task['description']} - {status} - Due: {due_date}")
 
     def add_task(self):
         description = input("Enter task description")
         due_date = input("Enter due date (MM-DD-YYYY: )")
-        self.tasks.append({"description": description, "completed": False, "due_date": due_date})
+        priority = input("Enter task priority (High, Medium, Low): ")
+        self.tasks.append({"description": description, "completed": False, "due_date": due_date, "priority": priority})
         print(Fore.GREEN + "Task added.")
         self.save_tasks()
 
@@ -64,12 +68,14 @@ class TaskManager:
             print(Fore.RED + "Invalid task number.")
         self.save_tasks()
 
-    def edit_task(self, task_number, new_description=None, new_due_date=None):
+    def edit_task(self, task_number, new_description=None, new_due_date=None, new_priority=None):
         if 0 < task_number <= len(self.tasks):
             if new_description:
                 self.tasks[task_number - 1]['description'] = new_description
             if new_due_date: 
                 self.tasks[task_number - 1]['due_date'] = new_due_date
+            if new_priority:
+                self.tasks[task_number - 1]['priority'] = new_priority
             print(Fore.GREEN + "Task updated successfully.")
             self.save_tasks() 
         else:
@@ -116,8 +122,9 @@ def main():
         elif choice == "5":
             task_number = int(input("Enter task number to edit: "))
             new_description = input("Enter new task description (leave blank to keep current): ")
-            new_due_date= input("Enter a new due date (MM-DD-YYYY) (leave blank to keep current): ")
-            task_manager.edit_task(task_number, new_description if new_description else None, new_due_date if new_due_date else None)
+            new_due_date = input("Enter a new due date (MM-DD-YYYY) (leave blank to keep current): ")
+            new_priority = input("Enter new priority (High, Medium, Low) (leave blanks to keep current): ")
+            task_manager.edit_task(task_number, new_description if new_description else None, new_due_date if new_due_date else None, new_priority if new_priority else None)
         elif choice == "6":
             print("Goodbye!")
             break
