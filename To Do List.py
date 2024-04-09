@@ -33,20 +33,26 @@ class TaskManager:
 
     def show_tasks(self):
         priority_mapping = {"High": 1, "Medium": 2, "Low": 3}
+        priority_symbols = {"High": Fore.RED + "!", "Medium": Fore.YELLOW + "*", "Low": Fore.GREEN + "-"}
+        future_date = datetime.datetime.strptime("12-31-9999", "%m-%d-%Y").date()
         if not self.tasks:  
             print(Fore.YELLOW + "No tasks to show.")
         else:
             print("To-Do List:")
-            sorted_tasks = sorted(self.tasks, key=lambda x: priority_mapping.get(x.get("priority", "Low"), 3))
-            for index, task in enumerate(self.tasks, start=1):
+            future_date_str = "12-31-9999"
+            sorted_tasks = sorted(self.tasks, key=lambda x: (priority_mapping.get(x.get("priority", "Low"), 3),
+            datetime.datetime.strptime(x["due_date"], "%m-%d-%Y").date() if x.get("due_date") else future_date ))
+            for index, task in enumerate(sorted_tasks, start=1):
                 status = "Done" if task["completed"] else "Not Done"
-                due_date = task.get("due_date", "No due date")
+                due_date_str = task.get("due_date", future_date_str)
+                due_date_display = "No due date" if not due_date_str or due_date_str == "12-31-9999" else due_date_str
                 priority = task.get("priority", "No priority")
-                print(f"{index}. {task['description']} - {status} - Due: {due_date}")
+                symbol = priority_symbols.get(priority, "")
+                print(f"{index}. {symbol} {task['description']} - {status} - Due: {due_date_display} - Priority: {priority}")
 
     def add_task(self):
-        description = input("Enter task description")
-        due_date = input("Enter due date (MM-DD-YYYY: )")
+        description = input("Enter task description: ")
+        due_date = input("Enter due date (MM-DD-YYYY): ")
         priority = input("Enter task priority (High, Medium, Low): ")
         self.tasks.append({"description": description, "completed": False, "due_date": due_date, "priority": priority})
         print(Fore.GREEN + "Task added.")
@@ -84,6 +90,9 @@ class TaskManager:
     def check_reminders(self):
         current_date = datetime.date.today()
         for task in self.tasks:
+            due_date_str = task.get("due_date")
+            if not due_date_str: 
+                continue
             try:
                 task_due_date = datetime.datetime.strptime(task["due_date"], '%m-%d-%Y').date()
                 if (task_due_date - current_date).days <= 1: 
@@ -93,7 +102,6 @@ class TaskManager:
 
                 continue
         
-
 def show_menu():
     clear_screen()
     print("1. Show all tasks")
